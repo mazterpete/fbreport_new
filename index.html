@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2025 Content Dashboard (CSV)</title>
+
+  <!-- DataTables (CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@2.1.8/css/dataTables.dataTables.min.css">
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#111826;
+      --panel2:#0f1722;
+      --border:#233043;
+      --text:#e6edf7;
+      --muted:#9fb0c6;
+      --link:#6ea8ff;
+      --btn:#e6edf7;
+      --btnText:#0b0f14;
+      --btnBorder:#e6edf7;
+      --inputBg:#0b1220;
+      --inputBorder:#2a3a52;
+    }
+
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans Thai", sans-serif;
+      margin: 24px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    h1{ font-size:18px; margin:0 0 12px; color: var(--text); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 12px 0 16px;
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--panel);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.15) inset;
+    }
+
+    .card .label{ font-size:12px; color: var(--muted); }
+    .card .value{ font-size:22px; font-weight:700; margin-top:6px; color: var(--text); }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:flex-end;
+      margin: 10px 0 16px;
+    }
+
+    .controls label{ font-size:12px; color: var(--muted); display:block; margin-bottom:6px; }
+
+    .controls select,
+    .controls input{
+      padding: 8px 10px;
+      border: 1px solid var(--inputBorder);
+      border-radius: 10px;
+      min-width: 220px;
+      background: var(--inputBg);
+      color: var(--text);
+      outline: none;
+    }
+    .controls select:focus,
+    .controls input:focus{
+      border-color: #3a5d88;
+      box-shadow: 0 0 0 3px rgba(110,168,255,0.15);
+    }
+
+    .controls button{
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--btnBorder);
+      background: transparent;
+      color: var(--btn);
+      cursor:pointer;
+    }
+
+    .controls button.secondary{
+      background: transparent;
+      color: var(--btn);
+      border: 1px solid var(--btnBorder);
+    }
+
+    .small{ font-size:12px; color: var(--muted); margin-top:6px; }
+    .badge{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); font-size:12px; color: var(--muted); }
+    a{ color: var(--link); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+
+    /* DataTables dark overrides */
+    table.dataTable{
+      border: 1px solid var(--border) !important;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--panel);
+      color: var(--text);
+    }
+    table.dataTable thead th{
+      background: var(--panel2) !important;
+      color: var(--text) !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    table.dataTable tbody td{
+      vertical-align: top;
+      border-bottom: 1px solid rgba(35,48,67,0.6) !important;
+      color: var(--text);
+    }
+    table.dataTable tbody tr{
+      background: var(--panel) !important;
+    }
+    table.dataTable tbody tr:hover{
+      background: rgba(110,168,255,0.08) !important;
+    }
+
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate{
+      color: var(--muted) !important;
+    }
+
+    .dataTables_wrapper .dataTables_filter input,
+    .dataTables_wrapper .dataTables_length select{
+      background: var(--inputBg) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--inputBorder) !important;
+      border-radius: 10px !important;
+      padding: 6px 8px !important;
+      outline: none;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button{
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+      background: transparent !important;
+      border-radius: 10px !important;
+      margin-left: 6px !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current{
+      background: rgba(110,168,255,0.18) !important;
+      border-color: rgba(110,168,255,0.35) !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover{
+      background: rgba(110,168,255,0.10) !important;
+      border-color: rgba(110,168,255,0.35) !important;
+    }
+
+    /* Make horizontal scroll (if any) blend in */
+    .dataTables_scrollBody{
+      border-top: 1px solid var(--border) !important;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dashboard: Annual Report CSV (ตรวจโพสต์ + กดลิงก์ต้นทาง)</h1>
+  <div class="small">
+    วิธีใช้: เลือกไฟล์ CSV → ระบบจะโหลดตาราง → เลือกปี → ค้นหา → กดลิงก์ถาวรเพื่อดูโพสต์ต้นทาง
+  </div>
+
+  <div class="controls">
+    <div>
+      <label>1) เลือกไฟล์ CSV</label>
+      <input id="fileInput" type="file" accept=".csv" />
+    </div>
+
+    <div>
+      <label>2) ปี</label>
+      <select id="yearFilter">
+        <option value="2025">2025</option>
+        <option value="all">ทั้งหมด</option>
+      </select>
+    </div>
+
+    <div>
+      <label>3) ค้นหา</label>
+      <input id="searchBox" type="text" placeholder="พิมพ์คำค้น เช่น tax, forum, training..." />
+    </div>
+
+    <button id="resetBtn" class="secondary" type="button">Reset Filters</button>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">จำนวนโพสต์ (หลังฟิลเตอร์)</div>
+      <div class="value" id="kpiPosts">-</div>
+    </div>
+    <div class="card">
+      <div class="label">Average Engagement / Post (Like+Share)</div>
+      <div class="value" id="kpiAvgEng">-</div>
+    </div>
+    <div class="card">
+      <div class="label">Top Engagement (Like+Share)</div>
+      <div class="value" id="kpiTopEng">-</div>
+    </div>
+  </div>
+
+  <table id="postsTable" class="display" style="width:100%">
+    <thead>
+      <tr>
+        <th>วันที่</th>
+        <th>ชื่อโพสต์</th>
+        <th>Like</th>
+        <th>Share</th>
+        <th>Engagement</th>
+        <th>Reach</th>
+        <th>Views</th>
+        <th>Link</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@2.1.8/js/dataTables.min.js"></script>
+
+  <script>
+    // ====== Column names expected (จากไฟล์ที่พี่พีทส่ง) ======
+    // ชื่อคอลัมน์ใน CSV ของพี่พีทน่าจะเป็นไทยตาม Excel export
+    const COL = {
+      title: "ชื่อ",
+      publishedAt: "เวลาที่เผยแพร่",
+      permalink: "ลิงก์ถาวร",
+      reach: "การเข้าถึง",
+      views: "ยอดดู",
+      like: "ความรู้สึก",
+      share: "การแชร์"
+    };
+
+    let rawRows = [];
+    let table = null;
+
+    const fileInput = document.getElementById("fileInput");
+    const yearFilter = document.getElementById("yearFilter");
+    const searchBox = document.getElementById("searchBox");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // Utilities
+    function parseDateMaybe(s) {
+      // รองรับ format "MM/DD/YYYY HH:mm" หรือ "DD/MM/YYYY HH:mm" แบบหลวม ๆ
+      if (!s) return null;
+      // try native parse first
+      const d1 = new Date(s);
+      if (!isNaN(d1)) return d1;
+
+      // fallback: split by space
+      const parts = String(s).split(" ");
+      const datePart = parts[0];
+      const timePart = parts[1];
+      if (!datePart) return null;
+
+      let nums = datePart.split(/[\/\-\.]/).map(x => parseInt(x, 10));
+      if (nums.length !== 3) return null;
+
+      // heuristic: if first part > 12 => dayfirst
+      let day, month, year;
+      if (nums[0] > 12) { day = nums[0]; month = nums[1]; year = nums[2]; }
+      else { month = nums[0]; day = nums[1]; year = nums[2]; }
+
+      const [hh, mm] = (timePart || "00:00").split(":").map(x => parseInt(x, 10));
+      const d = new Date(year, (month || 1) - 1, day || 1, hh || 0, mm || 0);
+      return isNaN(d) ? null : d;
+    }
+
+    function safeNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatDate(d) {
+      if (!d) return "";
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function currentFilteredRows() {
+      const yearVal = yearFilter.value;
+
+      return rawRows.filter(r => {
+        const d = r.__date;
+        if (yearVal !== "all") {
+          if (!d || String(d.getFullYear()) !== yearVal) return false;
+        }
+        return true;
+      });
+    }
+
+    function updateKPIs(rows) {
+      const count = rows.length;
+      const engagements = rows.map(r => r.__engagement);
+      const totalEng = engagements.reduce((a,b)=>a+b,0);
+      const avgEng = count ? (totalEng / count) : 0;
+
+      let top = null;
+      for (const r of rows) {
+        if (!top || r.__engagement > top.__engagement) top = r;
+      }
+
+      document.getElementById("kpiPosts").textContent = count.toLocaleString("th-TH");
+      document.getElementById("kpiAvgEng").textContent = avgEng.toFixed(1);
+      document.getElementById("kpiTopEng").textContent = top ? top.__engagement.toLocaleString("th-TH") : "-";
+    }
+
+    function rebuildTable(rows) {
+      const data = rows.map(r => {
+        const title = r[COL.title] || "";
+        const url = r[COL.permalink] || "";
+        return [
+          formatDate(r.__date),
+          title,
+          r.__like,
+          r.__share,
+          r.__engagement,
+          r.__reach,
+          r.__views,
+          url ? `<a href="${url}" target="_blank" rel="noopener">เปิดโพสต์</a>` : ""
+        ];
+      });
+
+      if (table) {
+        table.clear();
+        table.rows.add(data);
+        table.draw();
+      } else {
+        table = new DataTable("#postsTable", {
+          data,
+          columns: [
+            { title: "วันที่" },
+            { title: "ชื่อโพสต์" },
+            { title: "Like" },
+            { title: "Share" },
+            { title: "Engagement" },
+            { title: "Reach" },
+            { title: "Views" },
+            { title: "Link", orderable: false }
+          ],
+          pageLength: 25,
+          order: [[4, "desc"]],
+          language: {
+            search: "ค้นหาในตาราง:",
+            lengthMenu: "แสดง _MENU_ แถว",
+            info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ แถว",
+            paginate: { first: "แรก", last: "ท้าย", next: "ถัดไป", previous: "ก่อนหน้า" },
+            emptyTable: "ไม่มีข้อมูล"
+          }
+        });
+      }
+    }
+
+    function applyFilters() {
+      const rows = currentFilteredRows();
+      updateKPIs(rows);
+      rebuildTable(rows);
+
+      // search box -> datatable search
+      if (table) table.search(searchBox.value || "").draw();
+    }
+
+    function normalizeRows(rows) {
+      return rows.map(r => {
+        const d = parseDateMaybe(r[COL.publishedAt]);
+        const like = safeNum(r[COL.like]);
+        const share = safeNum(r[COL.share]);
+        const reach = safeNum(r[COL.reach]);
+        const views = safeNum(r[COL.views]);
+
+        r.__date = d;
+        r.__like = like;
+        r.__share = share;
+        r.__engagement = like + share;
+        r.__reach = reach;
+        r.__views = views;
+        return r;
+      });
+    }
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (res) => {
+          rawRows = normalizeRows(res.data || []);
+          applyFilters();
+        },
+        error: (err) => {
+          alert("อ่านไฟล์ไม่สำเร็จ: " + err.message);
+        }
+      });
+    });
+
+    yearFilter.addEventListener("change", applyFilters);
+    searchBox.addEventListener("input", () => { if (table) table.search(searchBox.value || "").draw(); });
+
+    resetBtn.addEventListener("click", () => {
+      yearFilter.value = "2025";
+      searchBox.value = "";
+      applyFilters();
+    });
+  </script>
+</body>
+</html>
