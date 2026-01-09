@@ -158,13 +158,70 @@
     .dataTables_scrollBody{
       border-top: 1px solid var(--border) !important;
     }
+  
+    /* Month tabs */
+    .tabs{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin: 14px 0 10px;
+      align-items:center;
+    }
+    .tab{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      user-select:none;
+    }
+    .tab:hover{
+      border-color: rgba(110,168,255,0.45);
+      background: rgba(110,168,255,0.08);
+    }
+    .tab.active{
+      border-color: rgba(110,168,255,0.55);
+      background: rgba(110,168,255,0.18);
+    }
+    .tabs .hint{
+      font-size: 12px;
+      color: var(--muted);
+      margin-right: 6px;
+    }
+    /* Charts */
+    #reportsArea canvas{ max-width: 100%; }
+
+
   </style>
 </head>
 <body>
   <h1>Dashboard: Annual Report CSV (ตรวจโพสต์ + กดลิงก์ต้นทาง)</h1>
   <div class="small">
-    วิธีใช้: เลือกไฟล์ CSV → ระบบจะโหลดตาราง → เลือกปี → ค้นหา → กดลิงก์ถาวรเพื่อดูโพสต์ต้นทาง
+    วิธีใช้: เลือกไฟล์ CSV → ระบบจะโหลดตาราง → เลือกปี/เดือน → ค้นหา → กดลิงก์ถาวรเพื่อดูโพสต์ต้นทาง
   </div>
+
+
+  <div class="tabs" id="monthTabs" aria-label="เลือกเดือน">
+    <span class="hint">เลือกเดือน:</span>
+    <button class="tab active" type="button" data-month="all">ทั้งปี</button>
+    <button class="tab" type="button" data-month="0">ม.ค.</button>
+    <button class="tab" type="button" data-month="1">ก.พ.</button>
+    <button class="tab" type="button" data-month="2">มี.ค.</button>
+    <button class="tab" type="button" data-month="3">เม.ย.</button>
+    <button class="tab" type="button" data-month="4">พ.ค.</button>
+    <button class="tab" type="button" data-month="5">มิ.ย.</button>
+    <button class="tab" type="button" data-month="6">ก.ค.</button>
+    <button class="tab" type="button" data-month="7">ส.ค.</button>
+    <button class="tab" type="button" data-month="8">ก.ย.</button>
+    <button class="tab" type="button" data-month="9">ต.ค.</button>
+    <button class="tab" type="button" data-month="10">พ.ย.</button>
+    <button class="tab" type="button" data-month="11">ธ.ค.</button>
+  </div>
+
+
 
   <div class="controls">
     <div>
@@ -186,6 +243,8 @@
     </div>
 
     <button id="resetBtn" class="secondary" type="button">Reset Filters</button>
+    <button id="compareBtn" class="secondary" type="button">📊 รายงานรายเดือน</button>
+    <button id="pieBtn" class="secondary" type="button">🥧 Pie รายปี</button>
   </div>
 
   <div class="grid">
@@ -201,7 +260,37 @@
       <div class="label">Top Engagement (Like+Share)</div>
       <div class="value" id="kpiTopEng">-</div>
     </div>
-  </div>
+  
+</div>
+
+  <!-- Reports (Data Visualization) -->
+  <section id="reportsArea" style="margin: 8px 0 14px;">
+    <div id="monthlyCharts" class="card" style="display:none;">
+      <div class="label" id="momTitle">เปรียบเทียบเดือนต่อเดือน (ตามปี + คำค้น) — Posts / Views / Like / Share / Comment</div>
+      <div class="small">หมายเหตุ: ถ้าไฟล์ไม่มีคอลัมน์ Comment ระบบจะแสดงเป็น 0 อัตโนมัติ</div>
+      <div style="margin-top:10px;">
+        <canvas id="momChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <div id="pieCharts" style="display:none; margin-top:12px;">
+      <div class="grid" style="grid-template-columns:1fr 1fr 1fr; margin-top:0;">
+        <div class="card">
+          <div class="label">Pie รายปี: Content (จำนวนโพสต์ต่อเดือน)</div>
+          <div style="margin-top:10px;"><canvas id="pieContent" height="160"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="label">Pie รายปี: Impression (ใช้ Impressions ถ้ามี / ถ้าไม่มีก็ใช้ Reach)</div>
+          <div style="margin-top:10px;"><canvas id="pieImpr" height="160"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="label">Pie รายปี: Engage (Like+Share+Comment)</div>
+          <div style="margin-top:10px;"><canvas id="pieEng" height="160"></canvas></div>
+        </div>
+      </div>
+      <div class="small">Tooltip จะแสดง Total และ Avg/Post ของแต่ละเดือน</div>
+    </div>
+  </section>
 
   <table id="postsTable" class="display" style="width:100%">
     <thead>
@@ -223,37 +312,84 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/datatables.net@2.1.8/js/dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <script>
-    // ====== Column names expected (จากไฟล์ที่พี่พีทส่ง) ======
-    // ชื่อคอลัมน์ใน CSV ของพี่พีทน่าจะเป็นไทยตาม Excel export
-    const COL = {
-      title: "ชื่อ",
-      publishedAt: "เวลาที่เผยแพร่",
-      permalink: "ลิงก์ถาวร",
-      reach: "การเข้าถึง",
-      views: "ยอดดู",
-      like: "ความรู้สึก",
-      share: "การแชร์"
+    // ====== Column names (รองรับไทย/อังกฤษแบบหลวม ๆ) ======
+    const COLCAND = {
+      title: ["ชื่อ", "Title", "Post title", "ชื่อโพสต์", "ข้อความ", "Message"],
+      publishedAt: ["เวลาที่เผยแพร่", "Published At", "เวลาเผยแพร่", "Timestamp", "Date", "Datetime"],
+      permalink: ["ลิงก์ถาวร", "Permalink", "Link", "URL", "ลิงค์ถาวร"],
+      reach: ["การเข้าถึง", "Reach"],
+      views: ["ยอดดู", "Views", "View"],
+      like: ["ความรู้สึก", "Like", "Likes"],
+      share: ["การแชร์", "Share", "Shares"],
+      comment: ["ความคิดเห็น", "คอมเมนต์", "Comment", "Comments"],
+      impressions: ["การแสดงผล", "Impression", "Impressions"]
+    };
+
+    let COL = {
+      title: null,
+      publishedAt: null,
+      permalink: null,
+      reach: null,
+      views: null,
+      like: null,
+      share: null,
+      comment: null,
+      impressions: null
     };
 
     let rawRows = [];
     let table = null;
 
+    // Charts
+    let momChart = null;
+    let pieContent = null;
+    let pieImpr = null;
+    let pieEng = null;
+
     const fileInput = document.getElementById("fileInput");
     const yearFilter = document.getElementById("yearFilter");
     const searchBox = document.getElementById("searchBox");
     const resetBtn = document.getElementById("resetBtn");
+    const compareBtn = document.getElementById("compareBtn");
+    const pieBtn = document.getElementById("pieBtn");
 
-    // Utilities
+    const monthTabs = document.getElementById("monthTabs");
+    let monthVal = "all";
+
+    const monthlyChartsEl = document.getElementById("monthlyCharts");
+    const pieChartsEl = document.getElementById("pieCharts");
+
+    // ---------- Utilities ----------
+    function detectFirst(fields, candidates){
+      if (!fields || !fields.length) return null;
+      const set = new Set(fields);
+      for (const c of candidates){
+        if (set.has(c)) return c;
+      }
+      // loose match (trim)
+      for (const c of candidates){
+        const found = fields.find(f => String(f).trim() === String(c).trim());
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function buildColumnMap(fields){
+      const mapped = {};
+      for (const key of Object.keys(COLCAND)){
+        mapped[key] = detectFirst(fields, COLCAND[key]);
+      }
+      COL = mapped;
+    }
+
     function parseDateMaybe(s) {
-      // รองรับ format "MM/DD/YYYY HH:mm" หรือ "DD/MM/YYYY HH:mm" แบบหลวม ๆ
       if (!s) return null;
-      // try native parse first
       const d1 = new Date(s);
       if (!isNaN(d1)) return d1;
 
-      // fallback: split by space
       const parts = String(s).split(" ");
       const datePart = parts[0];
       const timePart = parts[1];
@@ -262,7 +398,6 @@
       let nums = datePart.split(/[\/\-\.]/).map(x => parseInt(x, 10));
       if (nums.length !== 3) return null;
 
-      // heuristic: if first part > 12 => dayfirst
       let day, month, year;
       if (nums[0] > 12) { day = nums[0]; month = nums[1]; year = nums[2]; }
       else { month = nums[0]; day = nums[1]; year = nums[2]; }
@@ -273,7 +408,7 @@
     }
 
     function safeNum(v) {
-      const n = Number(v);
+      const n = Number(String(v || "").replace(/,/g,""));
       return Number.isFinite(n) ? n : 0;
     }
 
@@ -285,38 +420,69 @@
       return `${y}-${m}-${day}`;
     }
 
+    function normText(s){
+      return String(s || "").toLowerCase();
+    }
+
+    function keywordFiltered(rows){
+      const kw = normText(searchBox.value).trim();
+      if (!kw) return rows;
+      return rows.filter(r => {
+        const t = normText(COL.title ? r[COL.title] : "");
+        const link = normText(COL.permalink ? r[COL.permalink] : "");
+        return t.includes(kw) || link.includes(kw);
+      });
+    }
+
     function currentFilteredRows() {
       const yearVal = yearFilter.value;
+      let rows = rawRows.filter(r => {
+        const d = r.__date;
+        if (yearVal !== "all") {
+          if (!d || String(d.getFullYear()) !== yearVal) return false;
+        }
+        if (monthVal !== "all") {
+          if (!d || d.getMonth() !== Number(monthVal)) return false;
+        }
+        return true;
+      });
+      rows = keywordFiltered(rows);
+      return rows;
+    }
 
-      return rawRows.filter(r => {
+    // สำหรับกราฟรายเดือน/ปี: ใช้ปี + คำค้น แต่ "ไม่ล็อคเดือน" เพื่อเปรียบเทียบเดือนต่อเดือน
+    function rowsForMoMAndPie(){
+      const yearVal = yearFilter.value;
+      let rows = rawRows.filter(r => {
         const d = r.__date;
         if (yearVal !== "all") {
           if (!d || String(d.getFullYear()) !== yearVal) return false;
         }
         return true;
       });
+      rows = keywordFiltered(rows);
+      return rows;
     }
 
     function updateKPIs(rows) {
       const count = rows.length;
-      const engagements = rows.map(r => r.__engagement);
-      const totalEng = engagements.reduce((a,b)=>a+b,0);
+      const totalEng = rows.reduce((a,r)=>a + (r.__engagement || 0), 0);
       const avgEng = count ? (totalEng / count) : 0;
 
       let top = null;
       for (const r of rows) {
-        if (!top || r.__engagement > top.__engagement) top = r;
+        if (!top || (r.__engagement || 0) > (top.__engagement || 0)) top = r;
       }
 
       document.getElementById("kpiPosts").textContent = count.toLocaleString("th-TH");
       document.getElementById("kpiAvgEng").textContent = avgEng.toFixed(1);
-      document.getElementById("kpiTopEng").textContent = top ? top.__engagement.toLocaleString("th-TH") : "-";
+      document.getElementById("kpiTopEng").textContent = top ? (top.__engagement || 0).toLocaleString("th-TH") : "-";
     }
 
     function rebuildTable(rows) {
       const data = rows.map(r => {
-        const title = r[COL.title] || "";
-        const url = r[COL.permalink] || "";
+        const title = COL.title ? (r[COL.title] || "") : "";
+        const url = COL.permalink ? (r[COL.permalink] || "") : "";
         return [
           formatDate(r.__date),
           title,
@@ -359,33 +525,267 @@
       }
     }
 
+    // ---------- Monthly aggregation ----------
+    const MONTH_LABELS = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+    function getMonthlyAgg(rows){
+      const agg = Array.from({length:12},()=>({
+        posts:0, views:0, reach:0, impressions:0, like:0, share:0, comment:0, engage:0
+      }));
+
+      for (const r of rows){
+        const d = r.__date; if(!d) continue;
+        const m = d.getMonth();
+        agg[m].posts += 1;
+        agg[m].views += r.__views || 0;
+        agg[m].reach += r.__reach || 0;
+        agg[m].impressions += (r.__impressions || 0);
+        agg[m].like += r.__like || 0;
+        agg[m].share += r.__share || 0;
+        agg[m].comment += r.__comment || 0;
+        agg[m].engage += r.__engageFull || 0;
+      }
+      return agg;
+    }
+
+    function getDailyAgg(rows, monthIndex){
+      // rows should already be filtered by year + keyword
+      const inMonth = rows.filter(r => r.__date && r.__date.getMonth() === monthIndex);
+      let maxDay = 0;
+      const yv = yearFilter.value;
+      if (yv !== 'all'){
+        const y = Number(yv);
+        maxDay = new Date(y, monthIndex + 1, 0).getDate();
+      } else {
+        // across years: use max day found in data; fallback 31
+        maxDay = inMonth.reduce((m,r)=>Math.max(m, r.__date.getDate()), 0) || 31;
+      }
+
+      const agg = Array.from({length:maxDay}, ()=>({
+        posts:0, views:0, reach:0, impressions:0, like:0, share:0, comment:0, engage:0
+      }));
+
+      for (const r of inMonth){
+        const d = r.__date;
+        const di = d.getDate() - 1;
+        if (di < 0 || di >= maxDay) continue;
+        agg[di].posts += 1;
+        agg[di].views += r.__views || 0;
+        agg[di].reach += r.__reach || 0;
+        agg[di].impressions += (r.__impressions || 0);
+        agg[di].like += r.__like || 0;
+        agg[di].share += r.__share || 0;
+        agg[di].comment += r.__comment || 0;
+        agg[di].engage += r.__engageFull || 0;
+      }
+
+      const labels = Array.from({length:maxDay}, (_,i)=>String(i+1).padStart(2,'0'));
+      return { labels, agg };
+    }
+
+    function monthColors(alpha=0.65){
+      // 12 สีแบบไล่โทน (อ่านง่ายบน Dark)
+      const cols = [];
+      for(let i=0;i<12;i++){
+        const hue = Math.round((i*360)/12);
+        cols.push(`hsla(${hue}, 75%, 55%, ${alpha})`);
+      }
+      return cols;
+    }
+
+    function destroyCharts(){
+      if (momChart){ momChart.destroy(); momChart = null; }
+      if (pieContent){ pieContent.destroy(); pieContent = null; }
+      if (pieImpr){ pieImpr.destroy(); pieImpr = null; }
+      if (pieEng){ pieEng.destroy(); pieEng = null; }
+    }
+
+    function chartDefaults(){
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#e6edf7" } },
+          tooltip: { titleColor:"#e6edf7", bodyColor:"#e6edf7" }
+        },
+        scales: {
+          x: { ticks: { color:"#9fb0c6" }, grid: { color:"rgba(35,48,67,0.35)" } },
+          y: { ticks: { color:"#9fb0c6" }, grid: { color:"rgba(35,48,67,0.35)" } }
+        }
+      };
+    }
+
+    function renderCharts(){
+      const baseRows = rowsForMoMAndPie();
+
+      // ===== Report Chart (MoM or Daily) =====
+      if (monthlyChartsEl.style.display !== "none"){
+        const ctx = document.getElementById("momChart");
+        if (momChart) momChart.destroy();
+
+        let labels = [];
+        let series = null;
+
+        if (monthVal === "all"){
+          // Month-to-month
+          const agg = getMonthlyAgg(baseRows);
+          labels = MONTH_LABELS;
+          series = {
+            posts: agg.map(a=>a.posts),
+            views: agg.map(a=>a.views),
+            like: agg.map(a=>a.like),
+            share: agg.map(a=>a.share),
+            comment: agg.map(a=>a.comment)
+          };
+          const mt = document.getElementById('momTitle');
+          if (mt) mt.textContent = 'เปรียบเทียบเดือนต่อเดือน (ตามปี + คำค้น) — Posts / Views / Like / Share / Comment';
+        } else {
+          // Daily within selected month
+          const mi = Number(monthVal);
+          const daily = getDailyAgg(baseRows, mi);
+          labels = daily.labels;
+          const agg = daily.agg;
+          series = {
+            posts: agg.map(a=>a.posts),
+            views: agg.map(a=>a.views),
+            like: agg.map(a=>a.like),
+            share: agg.map(a=>a.share),
+            comment: agg.map(a=>a.comment)
+          };
+          const mt = document.getElementById('momTitle');
+          if (mt) mt.textContent = `รายวันในเดือน ${MONTH_LABELS[mi]} (ตามปี + คำค้น) — Posts / Views / Like / Share / Comment`;
+        }
+
+        const ds = [
+          { label:"Posts", data: series.posts, yAxisID:"y", backgroundColor:"rgba(110,168,255,0.55)", borderColor:"rgba(110,168,255,0.9)", borderWidth:1 },
+          { label:"Like", data: series.like, yAxisID:"y", backgroundColor:"rgba(94,234,212,0.45)", borderColor:"rgba(94,234,212,0.9)", borderWidth:1 },
+          { label:"Share", data: series.share, yAxisID:"y", backgroundColor:"rgba(250,204,21,0.45)", borderColor:"rgba(250,204,21,0.9)", borderWidth:1 },
+          { label:"Comment", data: series.comment, yAxisID:"y", backgroundColor:"rgba(244,114,182,0.45)", borderColor:"rgba(244,114,182,0.9)", borderWidth:1 },
+          { label:"Views", data: series.views, yAxisID:"y1", type:"line", tension:0.25, borderColor:"rgba(147,197,253,0.95)", pointRadius:2 }
+        ];
+
+        momChart = new Chart(ctx, {
+          type: "bar",
+          data: { labels, datasets: ds },
+          options: {
+            ...chartDefaults(),
+            plugins: {
+              ...chartDefaults().plugins,
+              tooltip: {
+                callbacks: {
+                  afterBody: (items)=>{
+                    const idx = items?.[0]?.dataIndex ?? 0;
+                    const p = (series.posts[idx] || 0);
+                    const v = (series.views[idx] || 0);
+                    return [`Posts: ${p.toLocaleString('th-TH')}`, `Views: ${v.toLocaleString('th-TH')}`];
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { ticks: { color:"#9fb0c6" }, grid: { color:"rgba(35,48,67,0.25)" } },
+              y: { beginAtZero:true, ticks:{ color:"#9fb0c6" }, grid:{ color:"rgba(35,48,67,0.35)" } },
+              y1: { beginAtZero:true, position:"right", ticks:{ color:"#9fb0c6" }, grid:{ drawOnChartArea:false } }
+            }
+          }
+        });
+      }
+
+      // Pie charts
+      if (pieChartsEl.style.display !== "none"){
+        // Pie เป็นภาพรวมรายปีเสมอ (ปี + คำค้น) ไม่ล็อคเดือน
+        const yearAgg = getMonthlyAgg(baseRows);
+        const colors = monthColors(0.72);
+        const posts = yearAgg.map(a=>a.posts);
+        const impr = yearAgg.map(a=>{
+          // ถ้ามี impressions ใช้ impressions ไม่งั้น fallback reach
+          const v = a.impressions || 0;
+          return v > 0 ? v : a.reach;
+        });
+        const engage = yearAgg.map(a=>a.engage);
+
+        const avgPerPost = (vals, postsArr, idx) => {
+          const p = postsArr[idx] || 0;
+          return p ? (vals[idx] / p) : 0;
+        };
+
+        const makePie = (canvasId, values, postsArr, titleLabel)=>{
+          const ctx = document.getElementById(canvasId);
+          return new Chart(ctx, {
+            type:"pie",
+            data:{ labels: MONTH_LABELS, datasets:[{ data: values, backgroundColor: colors }] },
+            options:{
+              responsive:true,
+              plugins:{
+                legend:{ labels:{ color:"#e6edf7" } },
+                tooltip:{
+                  callbacks:{
+                    label: (ctx)=>{
+                      const idx = ctx.dataIndex;
+                      const val = values[idx] || 0;
+                      const p = postsArr[idx] || 0;
+                      const avg = avgPerPost(values, postsArr, idx);
+                      const parts = [
+                        `${ctx.label}: ${val.toLocaleString("th-TH")}`
+                      ];
+                      if (titleLabel !== "Content"){
+                        parts.push(`Avg/Post: ${avg.toFixed(1)}`);
+                      }
+                      parts.push(`Posts: ${p.toLocaleString("th-TH")}`);
+                      return parts;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        };
+
+        if (pieContent) pieContent.destroy();
+        if (pieImpr) pieImpr.destroy();
+        if (pieEng) pieEng.destroy();
+
+        pieContent = makePie("pieContent", posts, posts, "Content");
+        pieImpr = makePie("pieImpr", impr, posts, "Impression");
+        pieEng = makePie("pieEng", engage, posts, "Engage");
+      }
+    }
+
     function applyFilters() {
       const rows = currentFilteredRows();
       updateKPIs(rows);
       rebuildTable(rows);
 
-      // search box -> datatable search
-      if (table) table.search(searchBox.value || "").draw();
+      // ถ้าเปิดกราฟอยู่ ให้รีเฟรชตาม filter (ปี + คำค้น)
+      if (monthlyChartsEl.style.display !== "none" || pieChartsEl.style.display !== "none"){
+        renderCharts();
+      }
     }
 
     function normalizeRows(rows) {
       return rows.map(r => {
-        const d = parseDateMaybe(r[COL.publishedAt]);
-        const like = safeNum(r[COL.like]);
-        const share = safeNum(r[COL.share]);
-        const reach = safeNum(r[COL.reach]);
-        const views = safeNum(r[COL.views]);
+        const d = COL.publishedAt ? parseDateMaybe(r[COL.publishedAt]) : null;
+        const like = COL.like ? safeNum(r[COL.like]) : 0;
+        const share = COL.share ? safeNum(r[COL.share]) : 0;
+        const reach = COL.reach ? safeNum(r[COL.reach]) : 0;
+        const views = COL.views ? safeNum(r[COL.views]) : 0;
+        const comment = COL.comment ? safeNum(r[COL.comment]) : 0;
+        const impressions = COL.impressions ? safeNum(r[COL.impressions]) : 0;
 
         r.__date = d;
         r.__like = like;
         r.__share = share;
-        r.__engagement = like + share;
+        r.__comment = comment;
+        r.__engagement = like + share; // KPI เดิม (Like+Share)
+        r.__engageFull = like + share + comment; // สำหรับกราฟ Engage
         r.__reach = reach;
         r.__views = views;
+        r.__impressions = impressions;
         return r;
       });
     }
 
+    // ---------- Events ----------
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -394,6 +794,9 @@
         header: true,
         skipEmptyLines: true,
         complete: (res) => {
+          const fields = res.meta?.fields || (res.data?.[0] ? Object.keys(res.data[0]) : []);
+          buildColumnMap(fields);
+
           rawRows = normalizeRows(res.data || []);
           applyFilters();
         },
@@ -403,13 +806,40 @@
       });
     });
 
+    // Month tabs
+    monthTabs.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-month]");
+      if (!btn) return;
+      monthVal = btn.dataset.month || "all";
+      monthTabs.querySelectorAll("button[data-month]").forEach(b => {
+        b.classList.toggle("active", b === btn);
+      });
+      applyFilters();
+    });
+
     yearFilter.addEventListener("change", applyFilters);
-    searchBox.addEventListener("input", () => { if (table) table.search(searchBox.value || "").draw(); });
+    searchBox.addEventListener("input", applyFilters);
 
     resetBtn.addEventListener("click", () => {
       yearFilter.value = "2025";
+      monthVal = "all";
+      monthTabs.querySelectorAll("button[data-month]").forEach(b => {
+        b.classList.toggle("active", b.dataset.month === "all");
+      });
       searchBox.value = "";
       applyFilters();
+    });
+
+    compareBtn.addEventListener("click", () => {
+      const isOpen = monthlyChartsEl.style.display !== "none";
+      monthlyChartsEl.style.display = isOpen ? "none" : "block";
+      if (!isOpen) renderCharts();
+    });
+
+    pieBtn.addEventListener("click", () => {
+      const isOpen = pieChartsEl.style.display !== "none";
+      pieChartsEl.style.display = isOpen ? "none" : "block";
+      if (!isOpen) renderCharts();
     });
   </script>
 </body>
